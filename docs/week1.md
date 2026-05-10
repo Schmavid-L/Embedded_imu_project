@@ -63,6 +63,13 @@ void loop() {
     Serial.println("Taking sample...");
   }
 }
+## Struct practice 
+struct IMUSample {
+  unsigned long time_ms;
+  float ax;
+  float ay;
+  float az;
+};
 ## fake sensor data practice 
 #struct IMUSample {
   unsigned long time_ms;
