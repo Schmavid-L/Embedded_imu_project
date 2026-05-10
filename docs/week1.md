@@ -100,3 +100,17 @@ void loop() {
 
   delay(100);
 }
+## What I accomplished today
+- Implemented non-blocking timing using millis()
+- Created IMUSample struct to organize data
+- Generated fake IMU data and printed in CSV format
+- Verified consistent sampling behavior
+
+## Observations
+- Serial output works reliably
+- Timing logic is consistent
+- Data formatting is correct for future logging
+
+## Next step
+- Introduce changing data (simulate real sensor behavior)
+- Prepare for real MPU-6050 integration
