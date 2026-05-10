@@ -1,0 +1,24 @@
+# Project Context
+
+## Goal
+Build a real-time embedded system using an MPU-6050 to read, process, and log inertial motion data under noisy conditions.
+
+## Hardware
+- Elegoo Uno R3
+- MPU-6050
+- microSD module
+
+## Current State
+- Arduino basics working
+- Serial output implemented
+- Learning timing with millis()
+
+## Architecture (Planned)
+Sensor → Arduino → Processing → SD logging
+
+## Current Challenge
+(example: "Struggling with stable timing using millis()")
+
+## What I’ve Tried
+- Used delay() but it blocks execution
+- Switched to millis() but timing feels inconsistent
