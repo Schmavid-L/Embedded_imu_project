@@ -114,3 +114,33 @@ void loop() {
 ## Next step
 - Introduce changing data (simulate real sensor behavior)
 - Prepare for real MPU-6050 integration
+
+
+
+
+## Session: Dynamic Data Simulation
+
+### What I implemented
+- Created structured IMU data using `IMUSample`
+- Implemented non-blocking timing using `millis()`
+- Built oscillating signal for `ay` using directional state logic
+- Added linear trend for `ax`
+- Introduced pseudo-random noise for `az`
+- Began implementing a ring buffer structure
+
+### Key concepts learned
+- Difference between static vs dynamic data
+- How to simulate sensor behavior using patterns (oscillation, trend, noise)
+- Importance of separating signal vs noise
+- Managing state (direction, counters) across loop iterations
+
+### Observations
+- Oscillating data creates predictable motion patterns
+- Noise must be small and uncorrelated to simulate real sensors
+- Timing using `millis()` is reliable and non-blocking
+- Serial output format (CSV) is useful for future logging
+
+### Next focus
+- Improve realism of simulated data
+- Finalize ring buffer logic
+- Prepare for real IMU integration
