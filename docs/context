@@ -22,3 +22,156 @@ Sensor → Arduino → Processing → SD logging
 ## What I’ve Tried
 - Used delay() but it blocks execution
 - Switched to millis() but timing feels inconsistent
+chatgpt timeline 
+
+
+
+🧭 Phase 0 — Foundation (you’re basically here)
+
+Goal: Prove you can run a timed, structured data pipeline.
+
+Work:
+
+Non-blocking loop with millis()
+CSV-style output
+IMUSample struct
+Simulated data (trend + oscillation + noise)
+
+Done when:
+
+Output is stable, well-formatted, and repeatable
+🧪 Phase 1 — Data Realism & Hygiene (1–2 days)
+
+Goal: Make your fake data look like a real sensor and clean your pipeline.
+
+Work:
+
+Tune ranges (ay ~ [-2, 2], az ~ 9.8 ± small noise)
+Fix ring buffer (write at tail, wrap correctly, don’t advance head unless reading)
+Add CSV header once in setup()
+Pick a reasonable sample rate (e.g., 100–200 ms for now)
+
+Done when:
+
+ax = trend, ay = oscillation, az = small random noise
+Buffer logic is correct and simple
+🔌 Phase 2 — IMU Bring-Up (2–3 days)
+
+Goal: Replace fake data with real MPU-6050 data.
+
+Work:
+
+Wire IMU (I2C)
+Read raw ax, ay, az, gx, gy, gz
+Print raw values in CSV (no filtering yet)
+Verify axes change as you move the board
+
+Done when:
+
+You can tilt/move the sensor and see sensible changes
+Data is clearly noisy/drifty
+🔍 Phase 3 — Understand Raw Data (1–2 days)
+
+Goal: Build intuition about what’s wrong with real data.
+
+Work:
+
+Observe noise (still sensor)
+Observe drift (gyro over time)
+Observe spikes (taps/impacts)
+Compare to your simulated data
+
+Done when:
+
+You can point to: noise, drift, spikes in your logs
+🧹 Phase 4 — Basic Filtering (2–3 days)
+
+Goal: Make data usable.
+
+Work:
+
+Moving average (use your ring buffer)
+Simple low-pass behavior (smooth vs lag tradeoff)
+Compare raw vs filtered side-by-side
+
+Done when:
+
+Noise visibly reduced
+You can explain the tradeoff (smoothness vs responsiveness)
+🧠 Phase 5 — Derived Signals (2–3 days)
+
+Goal: Turn raw data into meaningful quantities.
+
+Work:
+
+Compute tilt (pitch/roll) from accelerometer (conceptually)
+Integrate gyro short-term (see drift)
+Combine ideas (even a simple complementary-style blend, conceptually)
+
+Done when:
+
+You output a stable angle estimate that reacts to motion
+⚠️ Phase 6 — Fault Handling (1–2 days)
+
+Goal: Make your system robust.
+
+Work:
+
+Detect spikes (thresholds vs recent history)
+Handle missing/late samples (timing checks)
+Sanity checks (impossible values)
+
+Done when:
+
+System flags/ignores bad data instead of trusting everything
+💾 Phase 7 — Data Logging (2 days)
+
+Goal: Persist data for analysis.
+
+Work:
+
+Write CSV to microSD
+Log: time, raw, filtered, derived values
+Organize runs (one file per test)
+
+Done when:
+
+You can remove the SD card and open clean datasets on your PC
+🚗 Phase 8 — Real-World Testing (2–4 days)
+
+Goal: Validate under motion.
+
+Work:
+
+Mount on RC car (or simple moving platform)
+Run controlled tests:
+straight acceleration
+stops
+turns
+Compare expectations vs logs
+
+Done when:
+
+You can explain what each maneuver looks like in data
+📊 Phase 9 — Analysis & Presentation (2–3 days)
+
+Goal: Turn work into a strong project.
+
+Work:
+
+Plot data (optional but powerful)
+Quantify improvements (before/after filtering)
+Write clear README:
+architecture
+constraints (timing, memory)
+results (with examples)
+
+Done when:
+
+Someone can understand your system in 2–3 minutes
+🗓️ Suggested 4–5 Week Timeline
+Week 1: Phases 0–2 (you’re nearly through)
+Week 2: Phases 3–4
+Week 3: Phases 5–6
+Week 4: Phases 7–8
+Week 5 (optional): Phase 9 polish
