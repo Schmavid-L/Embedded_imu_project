@@ -144,3 +144,71 @@ void loop() {
 - Improve realism of simulated data
 - Finalize ring buffer logic
 - Prepare for real IMU integration
+
+
+
+
+
+# MPU-6050 IMU Bring-Up
+
+## Objective
+Integrate the MPU-6050 with the Elegoo Uno R3 and establish I2C communication to retrieve raw accelerometer and gyroscope data.
+
+---
+
+## Hardware Setup
+
+### Components
+- Elegoo Uno R3
+- MPU-6050 IMU module
+- Jumper wires
+
+### Wiring
+- VCC → 5V
+- GND → GND
+- SDA → A4
+- SCL → A5
+
+---
+
+## Communication Protocol
+
+The MPU-6050 communicates using the I2C protocol.
+
+### Key Concepts
+- Arduino acts as **I2C master**
+- MPU-6050 acts as **I2C slave**
+- Communication occurs over:
+  - SDA (data line)
+  - SCL (clock line)
+
+### Device Address
+- Primary address used: `0x68`
+- Alternative address: `0x69` (depends on AD0 pin)
+
+---
+
+## Sensor Initialization
+
+The MPU-6050 starts in a **sleep state** by default.
+
+To enable data output:
+- The Arduino writes to the **Power Management Register (0x6B)**
+- Writing `0` wakes the sensor
+
+### Conceptual Flow
+1. Begin I2C communication
+2. Send device address
+3. Write to register `0x6B`
+4. Send wake command (`0`)
+
+---
+
+## Data Acquisition
+
+### Register Layout
+
+Sensor data is stored in sequential registers starting at:
+
+```text
+0x3B → accelerometer data block
