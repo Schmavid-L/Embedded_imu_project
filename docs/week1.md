@@ -290,3 +290,18 @@ Interpretation:
 
 Conclusion:
 - Raw IMU data must be filtered for reliable use
+### 6. Side-to-Side Motion
+
+Observed:
+- ay fluctuates between positive and negative values
+- ax remains dominant due to gravity alignment
+- az shifts slightly but is not dominant
+
+Gyroscope:
+- spikes during rapid motion
+- returns toward baseline after movement stops
+
+Conclusion:
+- Y-axis reflects lateral motion
+- Accelerometer captures tilt changes
+- Gyroscope captures rate of motion
