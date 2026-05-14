@@ -212,3 +212,81 @@ Sensor data is stored in sequential registers starting at:
 
 ```text
 0x3B → accelerometer data block
+
+
+## IMU Behavior by Orientation
+
+### 1. Flat Orientation (Sensor lying flat)
+
+Observed:
+- ax ≈ small (1000–1500 range)
+- ay ≈ near zero (small variation)
+- az ≈ large (~20000)
+
+Interpretation:
+- Gravity is acting primarily on the Z-axis
+- X and Y axes are mostly perpendicular to gravity
+- Small variation is due to sensor noise
+
+Conclusion:
+- When flat, Z-axis represents gravity
+
+---
+
+### 2. Tilted on Side (X-axis dominant)
+
+Observed:
+- ax ≈ large (~15000+)
+- ay ≈ small
+- az ≈ reduced magnitude
+
+Interpretation:
+- Gravity has shifted from Z-axis to X-axis
+- The sensor orientation determines which axis reads the largest value
+
+Conclusion:
+- The accelerometer measures direction of gravity relative to the sensor
+
+---
+
+### 3. Opposite Side Tilt (X-axis negative or other axis dominant)
+
+Observed:
+- ax decreases or becomes negative (depending on orientation)
+- other axes adjust accordingly
+
+Interpretation:
+- Gravity vector is now pointing in the opposite direction relative to the sensor axis
+
+Conclusion:
+- Axis values depend on both magnitude and direction of tilt
+
+---
+
+### 4. Movement / Rotation
+
+Observed:
+- gyroscope values spike during motion
+- gyroscope values return near baseline when still
+
+Interpretation:
+- Gyroscope measures angular velocity (rate of rotation)
+- Noise and bias cause values to not return exactly to zero
+
+Conclusion:
+- Gyroscope detects motion, not orientation
+
+---
+
+### 5. Noise and Stability
+
+Observed:
+- accelerometer values fluctuate slightly even when still
+- gyroscope values never perfectly zero
+
+Interpretation:
+- Sensor noise is always present
+- Bias and environmental factors affect readings
+
+Conclusion:
+- Raw IMU data must be filtered for reliable use
