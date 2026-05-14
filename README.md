@@ -12,9 +12,8 @@ Build a real-time system using an MPU-6050 to read, process, and log inertial mo
 - microSD module
 
 ## Current Progress
-- Repository initialized with project structure
-- Beginning Arduino fundamentals (Serial communication, timing)
-
+- soldering connections from header to mpu module
+- testing raw data in different positions 
 ## System Architecture (Planned)
 - Sensor (MPU-6050) → I2C → Microcontroller (Elegoo Uno R3)
 - Data processing (filtering, buffering)
