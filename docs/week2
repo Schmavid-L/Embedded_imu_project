@@ -1,0 +1,12 @@
+## Gyro Offset Correction
+
+Measured stationary gyro offsets:
+- gx_offset = -76.32
+- gy_offset = 214.28
+- gz_offset = -102.76
+
+Correction method:
+corrected = raw - offset
+
+Result:
+Corrected gyro values moved closer to zero while the IMU was stationary, confirming the bias correction step works.
