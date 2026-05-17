@@ -10,3 +10,18 @@ corrected = raw - offset
 
 Result:
 Corrected gyro values moved closer to zero while the IMU was stationary, confirming the bias correction step works.
+
+
+
+5_17
+## Moving Average Filter: Gyroscope
+
+Extended the moving average filter from gyro X to all three gyro axes.
+
+Pipeline:
+raw gyro → offset correction → ring buffer → moving average
+
+Each gyro axis uses its own buffer, while all buffers share the same write index because each IMU sample updates gx, gy, and gz together.
+
+Observation:
+Filtered gyro values fluctuate less than corrected raw gyro values, but respond more slowly to sudden motion.
