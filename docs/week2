@@ -25,3 +25,33 @@ Each gyro axis uses its own buffer, while all buffers share the same write index
 
 Observation:
 Filtered gyro values fluctuate less than corrected raw gyro values, but respond more slowly to sudden motion.
+
+
+5_18
+## Filter Tradeoff Observation
+
+The moving average filter significantly reduced high-frequency noise in the gyro data, producing smoother signals.
+
+However, increasing the buffer size introduced visible lag:
+- raw gyro values reacted immediately to motion
+- filtered gyro values responded more slowly
+
+This occurs because the filter averages historical samples, causing previous data to influence the current output.
+
+Conclusion:
+Filtering improves stability at the cost of responsiveness.
+
+## Buffer Size Selection
+
+Tested moving average behavior using different buffer sizes.
+
+Observation:
+- Small buffers responded quickly but allowed more noise.
+- Large buffers produced smoother signals but introduced noticeable lag.
+- A buffer size around 5–10 gave the best balance.
+
+Selected:
+- BUFFER_SIZE = 6
+
+Reason:
+This value provides moderate smoothing while keeping the filtered gyro signal responsive enough for motion tracking.
