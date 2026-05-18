@@ -55,3 +55,37 @@ Selected:
 
 Reason:
 This value provides moderate smoothing while keeping the filtered gyro signal responsive enough for motion tracking.
+
+
+
+## Filter Tuning and Sensor Characteristics
+
+### Moving Average Filtering
+Extended moving average filtering to gx, gy, and gz using independent ring buffers.
+
+### Observations
+- Filtering reduced high-frequency gyro noise.
+- Larger buffer sizes produced smoother output.
+- Larger buffers also introduced visible lag and slower response.
+
+### Sensor Characteristics
+
+Gyroscope:
+- Measures angular velocity
+- Stable and smooth short-term
+- Suffers from long-term drift
+
+Accelerometer:
+- Measures gravity + linear acceleration
+- Provides absolute orientation reference
+- Sensitive to vibration, shock, and movement
+
+### Key Insight
+The gyroscope and accelerometer fail in different ways:
+- gyro drifts over time
+- accelerometer is noisy during motion
+
+This suggests that combining both sensors will eventually be necessary for reliable orientation estimation.
+
+### Next Step
+Begin accelerometer-based angle monitoring and orientation estimation.
