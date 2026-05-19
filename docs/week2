@@ -89,3 +89,164 @@ This suggests that combining both sensors will eventually be necessary for relia
 
 ### Next Step
 Begin accelerometer-based angle monitoring and orientation estimation.
+
+5_19
+# Accelerometer-Based Pitch Estimation and System-Level Sensor Analysis
+
+## Objective
+
+Transition from raw inertial sensing into orientation estimation using filtered accelerometer data.
+
+---
+
+## Work Completed
+
+### Accelerometer Filtering
+
+Implemented moving average filtering for accelerometer X-axis data using a fixed-size ring buffer architecture.
+
+Pipeline:
+
+raw ax → ring buffer → moving average → filtered_ax
+
+This significantly reduced high-frequency sensor noise and produced smoother orientation-related signals.
+
+---
+
+### Accelerometer-Based Pitch Estimation
+
+Implemented pitch estimation using the relationship between filtered accelerometer axes.
+
+Conceptually:
+
+pitch = atan2(filtered_ax, filtered_az)
+
+This converts the measured gravity vector into an estimated tilt angle.
+
+---
+
+## Observations
+
+### Noise Reduction
+
+The filtered pitch estimate showed:
+
+* smooth continuous transitions
+* reduced jitter
+* stable behavior during slow tilt motion
+
+The moving average filter successfully attenuated high-frequency accelerometer noise before angle estimation.
+
+---
+
+### Filter Tradeoff
+
+Larger moving average buffers reduced noise further but introduced visible lag in angle response.
+
+Observation:
+
+* raw accelerometer values reacted immediately
+* filtered values responded more slowly
+
+This demonstrated the responsiveness vs. smoothness tradeoff present in all real-time filtering systems.
+
+---
+
+## Critical System Insight
+
+### Accelerometer Limitation
+
+A major conceptual realization occurred during pitch testing:
+
+The accelerometer cannot distinguish between:
+
+* gravitational acceleration
+* linear motion acceleration
+
+This means:
+
+* accelerating forward can appear as backward tilt
+* braking can appear as forward pitch
+* bumps and impacts can corrupt orientation estimates
+
+While accelerometer-only pitch estimation works well during slow or mostly static motion, it becomes unreliable during dynamic movement.
+
+---
+
+## Sensor Characteristic Comparison
+
+### Gyroscope
+
+Measures:
+
+* angular velocity
+
+Strengths:
+
+* smooth short-term motion tracking
+* immune to linear acceleration
+
+Weaknesses:
+
+* long-term drift accumulation
+
+---
+
+### Accelerometer
+
+Measures:
+
+* gravity + linear acceleration
+
+Strengths:
+
+* absolute gravity reference
+* stable long-term orientation reference
+
+Weaknesses:
+
+* vibration sensitivity
+* acceleration contamination
+* noisy during motion
+
+---
+
+## Key Engineering Realization
+
+The gyroscope and accelerometer fail in different ways.
+
+This establishes the need for:
+
+* sensor fusion
+* complementary filtering
+* combined state estimation
+
+The project has now moved beyond simple sensor reading and into real inertial state estimation concepts.
+
+---
+
+## Updated End Goal
+
+The long-term objective is evolving into:
+
+A compact embedded inertial telemetry system capable of:
+
+* onboard filtering
+* orientation estimation
+* wireless or logged telemetry streaming
+* API-based data access and retrieval
+* deployment onto a compact mobile platform (RC car / future embedded payload)
+
+Planned architecture:
+
+IMU → filtering → orientation estimation → telemetry/data logging API
+
+---
+
+## Next Steps
+
+* Implement gyro-based angle tracking
+* Begin complementary filter development
+* Design structured telemetry/data logging interface
+* Prepare migration path toward Nano or ESP32 hardware
+
