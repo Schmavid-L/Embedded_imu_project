@@ -1,0 +1,177 @@
+#include <Wire.h>
+// offset variables
+
+const float gx_offset = -76.32;
+const float gy_offset = 214.28;
+const float gz_offset = -102.76;
+
+// ring buffer architecture 
+#define BUFFER_SIZE 20
+float gxBuffer[BUFFER_SIZE];
+float gyBuffer[BUFFER_SIZE];
+float gzBuffer[BUFFER_SIZE];
+
+//ring buffer for accelerarometer 
+float axBuffer[BUFFER_SIZE];
+
+int writeIndex = 0;      
+int validSamples = 0;    // Tracks how many real data points we have stored
+
+const int MPU_ADDR = 0x68;
+
+unsigned long lastTime = 0;
+const unsigned long interval = 1000;
+
+unsigned long lastSample = 0;
+const unsigned long samplePeriod = 100; // 100 ms = 10 Hz
+
+struct IMUSample {
+  unsigned long time_ms;
+  int16_t ax;
+  int16_t ay;
+  int16_t az;
+  int16_t gx;
+  int16_t gy;
+  int16_t gz;
+};
+
+void setup() {
+  Serial.begin(9600);
+  Wire.begin();
+
+  Serial.println("Arduino is running");
+
+  // Wake up MPU-6050
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x6B);     // Power management register
+  Wire.write(0);        // Wake up device
+  byte error = Wire.endTransmission(true);
+
+  if (error == 0) {
+    Serial.println("MPU-6050 connected and awake");
+  } else {
+    Serial.println("MPU-6050 not found");
+  }
+
+  Serial.println("time_ms,ax,ay,az,gx,gy,gz,corrected_gx,corrected_gy,corrected_gz,filtered_gx,filtered_gy,filtered_gz,filtered_ax");
+}
+
+void loop() {
+  unsigned long currentTime = millis();
+
+  if (currentTime - lastTime >= interval) {
+    lastTime = currentTime;
+   // Serial.println("1 second passed");
+  }
+
+  unsigned long now = millis();
+
+  if (now - lastSample >= samplePeriod) {
+    lastSample = now;
+
+    IMUSample sample;
+    sample.time_ms = millis();
+
+    Wire.beginTransmission(MPU_ADDR);
+    Wire.write(0x3B); // Starting register for accelerometer data
+    byte error = Wire.endTransmission(false);
+
+    if (error != 0) {
+      Serial.println("I2C read request failed");
+      return;
+    }
+
+    Wire.requestFrom(MPU_ADDR, 14, true);
+
+    if (Wire.available() == 14) {
+      sample.ax = Wire.read() << 8 | Wire.read();
+      sample.ay = Wire.read() << 8 | Wire.read();
+      sample.az = Wire.read() << 8 | Wire.read();
+
+      int16_t temp = Wire.read() << 8 | Wire.read(); // ignored for now
+
+      sample.gx = Wire.read() << 8 | Wire.read();
+      sample.gy = Wire.read() << 8 | Wire.read();
+      sample.gz = Wire.read() << 8 | Wire.read();
+    
+
+    //correction logic for offset values 
+    float corrected_gx = sample.gx - gx_offset;
+    float corrected_gy = sample.gy - gy_offset;
+    float corrected_gz = sample.gz - gz_offset;
+
+// wrap around logic
+// fills
+    gxBuffer[writeIndex] = corrected_gx;
+    gyBuffer[writeIndex] = corrected_gy;
+    gzBuffer[writeIndex] = corrected_gz;
+
+    axBuffer[writeIndex] = sample.ax;
+
+    writeIndex = (writeIndex + 1) % BUFFER_SIZE;
+    if(validSamples < BUFFER_SIZE){
+      validSamples++;
+    }
+
+    float sumGx = 0;
+    float sumGy = 0;
+    float sumGz = 0;
+
+    float sumAx = 0;
+
+    for (int i = 0; i < validSamples; i++) {
+    sumGx += gxBuffer[i]; 
+    sumGy += gyBuffer[i]; 
+    sumGz += gzBuffer[i]; 
+
+    sumAx += axBuffer[i];
+
+}
+
+float filtered_gx = sumGx / validSamples;
+float filtered_gy = sumGy / validSamples;
+float filtered_gz = sumGz / validSamples;
+
+float filter_ax = sumAx / validSamples;
+
+      Serial.print(sample.time_ms);
+      Serial.print(",");
+      Serial.print(sample.ax);
+      Serial.print(",");
+      Serial.print(sample.ay);
+      Serial.print(",");
+      Serial.print(sample.az);
+      Serial.print(",");
+      Serial.print(sample.gx);
+      Serial.print(",");
+      Serial.print(sample.gy);
+      Serial.print(",");
+      Serial.print(sample.gz);
+
+    // corrected data 
+      Serial.print(",");
+      Serial.print(corrected_gx);
+  
+      Serial.print(",");
+      Serial.print(corrected_gy);
+      Serial.print(",");
+      Serial.print(corrected_gz);
+      
+          Serial.print(",");
+      Serial.print(filtered_gx);
+      Serial.print(",");
+      Serial.print(filtered_gy);
+      Serial.print(",");
+      Serial.print(filtered_gz);
+
+       Serial.print(",");
+       Serial.print(filter_ax);
+
+
+      Serial.println();
+
+    } else {
+      Serial.println("Not enough data received");
+    }
+  }
+}
