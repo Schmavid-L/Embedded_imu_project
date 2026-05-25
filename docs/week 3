@@ -24,3 +24,155 @@
    ┌─────────────────────────────────┐
    │ 5. TELEMETRY API OUTPUT LAYER   │ -> Emits standardized, 6-column machine stream
    └─────────────────────────────────┘
+# Telemetry Logging and Experimental Validation Phase
+
+## Objective
+
+Transition the project from live serial debugging into structured telemetry collection and experimental validation.
+
+---
+
+## Work Completed
+
+### Serial Telemetry Gateway
+
+Established an external telemetry capture pipeline using the COM3 serial output stream.
+
+System architecture now supports:
+
+IMU → onboard filtering/fusion → serial telemetry → external CSV logging
+
+This enables:
+
+* persistent dataset collection
+* offline analysis
+* repeatable experiments
+* future API/telemetry expansion
+
+---
+
+## Current Telemetry Structure
+
+Telemetry stream now includes:
+
+* timestamp
+* raw accelerometer values
+* raw gyroscope values
+* corrected gyro values
+* filtered gyro values
+* filtered accelerometer values
+* fused orientation estimate
+
+This effectively acts as an early telemetry API layer between the embedded system and external analysis tools.
+
+---
+
+## Sensor Fusion Validation
+
+Performed real-world disturbance testing using:
+
+* desk impacts
+* vibration
+* rapid motion
+* slow tilt movement
+
+### Observations
+
+#### Accelerometer-Only Angle
+
+* highly sensitive to impacts and vibration
+* reacts strongly to sudden acceleration
+* susceptible to false orientation estimates
+
+#### Gyroscope-Only Angle
+
+* smooth short-term motion tracking
+* stable during vibration
+* accumulates long-term drift
+
+#### Fused Angle Estimate
+
+* significantly more stable during disturbance
+* resisted large false spikes caused by accelerometer corruption
+* retained smooth responsiveness from gyroscope integration
+
+---
+
+## Key Engineering Insight
+
+The accelerometer cannot distinguish:
+
+* gravity
+  from
+* linear acceleration
+
+This creates false tilt estimates during:
+
+* acceleration
+* braking
+* impacts
+* vibration
+
+The gyroscope compensates for this weakness by providing smooth rotational motion tracking.
+
+The complementary filter successfully combines:
+
+* accelerometer long-term stability
+  with
+* gyroscope short-term responsiveness
+
+---
+
+## Data Pipeline Status
+
+Current embedded processing pipeline:
+
+raw IMU acquisition
+→ gyro bias correction
+→ moving average filtering
+→ accelerometer pitch estimation
+→ gyro angle integration
+→ complementary filtering
+→ telemetry stream output
+→ CSV logging
+
+---
+
+## Project Evolution
+
+The project has now evolved from:
+
+* sensor experimentation
+  into:
+* inertial state estimation
+* embedded telemetry architecture
+* validation-oriented system engineering
+
+---
+
+## Long-Term Direction
+
+Planned future architecture:
+
+Compact embedded telemetry module featuring:
+
+* onboard sensor fusion
+* structured telemetry streaming
+* CSV/API-compatible output
+* wireless ESP32 migration
+* deployable RC-car/mobile-platform integration
+
+Potential future system:
+
+IMU → filtering/fusion → telemetry API → wireless transmission/logging
+
+---
+
+## Next Steps
+
+* structured experiment datasets
+* telemetry plotting and visualization
+* complementary filter tuning
+* orientation stability analysis
+* ESP32 telemetry migration planning
+* compact soldered embedded payload design
