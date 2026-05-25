@@ -1,0 +1,26 @@
+[ Physical Vehicle Motion ]
+            │
+            ▼ (100 Hz Sample Clock)
+   ┌─────────────────────────────────┐
+   │ 1. HARDWARE ACQUISITION LAYER   │ -> Requests 14-byte burst over I2C
+   └────────┬────────────────────────┘
+            │ Raw Binary Data
+            ▼
+   ┌─────────────────────────────────┐
+   │ 2. CALIBRATION & BIAS LAYER     │ -> Applies ax/az/gx/gy/gz static offsets
+   └────────┬────────────────────────┘
+            │ Corrected Floating-Point Values
+            ▼
+   ┌─────────────────────────────────┐
+   │ 3. SIGNAL PROCESSING LAYER      │ -> Runs 20-sample Ring Buffer Moving Average
+   └────────┬────────────────────────┘
+            │ Low-Pass Filtered Signals
+            ▼
+   ┌─────────────────────────────────┐
+   │ 4. STATE ESTIMATION (FUSION)    │ -> Executes Complementary Filter (Alpha 0.98)
+   └────────┬────────────────────────┘
+            │ Fused Orientation Angle State
+            ▼
+   ┌─────────────────────────────────┐
+   │ 5. TELEMETRY API OUTPUT LAYER   │ -> Emits standardized, 6-column machine stream
+   └─────────────────────────────────┘
