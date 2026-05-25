@@ -250,3 +250,16 @@ IMU → filtering → orientation estimation → telemetry/data logging API
 * Design structured telemetry/data logging interface
 * Prepare migration path toward Nano or ESP32 hardware
 
+## Complementary Filter Validation Under Disturbance
+
+Performed disturbance testing by striking the desk while monitoring orientation estimates.
+
+Observations:
+- Raw accelerometer-based angle estimates experienced large transient spikes.
+- Accelerometer interpreted impact acceleration as rapid orientation change.
+- Complementary-filtered angle estimate remained significantly more stable.
+
+Conclusion:
+The complementary filter successfully reduced false orientation estimates caused by high-frequency acceleration disturbances.
+
+This demonstrates why accelerometer-only orientation tracking is unreliable in dynamic environments such as RC vehicles, drones, or robotics platforms.
