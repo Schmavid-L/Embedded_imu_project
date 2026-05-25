@@ -1,0 +1,88 @@
+import csv
+import serial
+import time
+
+# ==========================================
+# 1. HARDWARE & PERIPHERAL CONFIGURATION
+# ==========================================
+# Define the communication settings. Ensure PORT matches your Arduino port.
+PORT = "COM3"
+BAUD_RATE = 9600
+OUTPUT_FILE = "imu_telemetry_log.csv"
+
+print(f"🔄 Initializing connection to Arduino on {PORT}...")
+
+# ==========================================
+# 2. THE ERROR-HANDLING WRAPPER
+# ==========================================
+# We wrap the code in a 'try' block to catch runtime hardware disconnects
+try:
+    # Open the live serial connection over USB
+    ser = serial.Serial(PORT, BAUD_RATE, timeout=1.0)
+    
+    # CRITICAL: When the serial port opens, the Arduino resets automatically.
+    # We must pause Python for 2 seconds to let the microcontroller boot up.
+    time.sleep(2)
+    print(f"✅ Pipeline Active! Writing data directly to '{OUTPUT_FILE}'...")
+    print("👉 Click inside this terminal and press Ctrl+C to safely stop logging.")
+
+    # ==========================================
+    # 3. THE DATA STREAM & FILE STORAGE LIFECYCLE
+    # ==========================================
+    # Open the file in write ('w') mode. The 'with' keyword ensures that even if
+    # the code crashes, Python will cleanly close and save the file to your disk.
+    with open(OUTPUT_FILE, mode="w", newline="") as file:
+        writer = csv.writer(file)
+
+        # Start an infinite loop to constantly monitor the USB buffer
+        while True:
+            # Check if there are unread binary bytes waiting in the serial buffer
+            if ser.in_waiting > 0:
+                
+                # Read one full line from the serial port (ends at a newline character)
+                raw_line = ser.readline()
+                
+                # Process the raw bytes:
+                # 1. .decode("utf-8") converts raw binary bytes into a readable string text.
+                # 2. .strip() cuts off hidden formatting layout symbols like \r and \n.
+                clean_line = raw_line.decode("utf-8").strip()
+
+                # CRITICAL INTERFACE RULE 1: Handle human debug messages
+                # If a line starts with '#' (our machine schema marker), print it to 
+                # the screen for the developer to read, but skip writing it to the CSV.
+                if clean_line.startswith("#"):
+                    print(f"📡 System Message: {clean_line}")
+                    continue
+
+                # CRITICAL INTERFACE RULE 2: Protect against empty packets
+                # If the line is empty or just whitespace, skip it to prevent file corruption.
+                if not clean_line:
+                    continue
+
+                # PARSING THE NUMBERS:
+                # Split the comma-separated string into a dynamic array (List) of values.
+                # Example: "159,-212.00,81.76" becomes ["159", "-212.00", "81.76"]
+                data_row = clean_line.split(",")
+
+                # Write the array directly into the spreadsheet file as a clean row
+                writer.writerow(data_row)
+
+                # Output the logged array to the terminal so you can verify live action
+                print(f"Logged Packet: {data_row}")
+
+# ==========================================
+# 4. EXCEPTION & CLEANUP HANDLING
+# ==========================================
+except serial.SerialException:
+    # This runs if the port is hogged by another IDE or if the USB cable gets pulled out
+    print(f"❌ Hardware Error: Could not access {PORT}. Is the Serial Monitor still open?")
+
+except KeyboardInterrupt:
+    # This runs when you press Ctrl+C. It intercepts the hard kill command and exits gracefully.
+    print(f"\n🛑 Session ended by user. Telemetry file safely stored as '{OUTPUT_FILE}'.")
+
+finally:
+    # This 'finally' block GUARANTEES execution no matter what happens above.
+    # If the serial port is still hanging open, we force it shut here to clear the port for next time.
+    if "ser" in locals() and ser.is_open:
+        ser.close()
