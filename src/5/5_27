@@ -1,0 +1,258 @@
+#include <Wire.h>
+
+// ==========================================
+// MPU-6050 CONFIGURATION
+// ==========================================
+
+const int MPU_ADDR = 0x68;
+
+// Gyro offsets from your calibration
+const float gx_offset = -53.5;
+const float gy_offset = 214.28;
+const float gz_offset = -102.76;
+
+// Accel offsets from your calibration
+const float ax_offset = 976.00;
+const float ay_offset = -263.00;
+const float az_offset = 0.00;
+
+// Moving average size
+#define BUFFER_SIZE 20
+
+// Complementary filter tuning
+const float alpha = 0.95;
+
+// Sampling
+unsigned long lastSample = 0;
+const unsigned long samplePeriod = 100;   // ms = 10 Hz
+
+// Angle variables
+float gyroAngleX = 0.0;
+float fusedAngleX = 0.0;
+
+// Moving average buffers
+float gxBuffer[BUFFER_SIZE];
+float gyBuffer[BUFFER_SIZE];
+float gzBuffer[BUFFER_SIZE];
+
+float axBuffer[BUFFER_SIZE];
+float ayBuffer[BUFFER_SIZE];
+float azBuffer[BUFFER_SIZE];
+
+int writeIndex = 0;
+int validSamples = 0;
+
+struct IMUSample {
+  unsigned long time_ms;
+  int16_t ax, ay, az;
+  int16_t gx, gy, gz;
+};
+
+// ==========================================
+// SETUP
+// ==========================================
+
+void setup() {
+  Serial.begin(115200);
+  Wire.begin();
+
+  delay(1000);
+
+  Serial.println("# Arduino is running");
+
+  // Wake up MPU-6050
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x6B);
+  Wire.write(0x00);
+  byte error = Wire.endTransmission(true);
+
+  if (error == 0) {
+    Serial.println("# MPU-6050 connected and awake");
+  } else {
+    Serial.println("# MPU-6050 not found");
+  }
+
+  // Gyro full-scale range: +/-250 deg/s
+  // Sensitivity = 131 LSB/(deg/s)
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x1B);
+  Wire.write(0x00);
+  Wire.endTransmission(true);
+
+  // Accel full-scale range: +/-2g
+  // Sensitivity = 16384 LSB/g
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x1C);
+  Wire.write(0x00);
+  Wire.endTransmission(true);
+
+  // Optional digital low-pass filter
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x1A);
+  Wire.write(0x03);
+  Wire.endTransmission(true);
+
+  // CSV header
+  Serial.println("time_ms,raw_ax,raw_ay,raw_az,raw_gx,raw_gy,raw_gz,filtered_ax,filtered_ay,filtered_az,filtered_gx,gyroRateX,pitch_deg,gyro_angle_deg,fusedAngle_x");
+
+  lastSample = millis();
+}
+
+// ==========================================
+// READ MPU-6050
+// ==========================================
+
+bool readMPU6050(IMUSample &sample) {
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x3B);
+  byte error = Wire.endTransmission(false);
+
+  if (error != 0) {
+    Serial.println("# I2C read request failed");
+    return false;
+  }
+
+  Wire.requestFrom(MPU_ADDR, 14, true);
+
+  if (Wire.available() != 14) {
+    Serial.println("# Not enough data received");
+    return false;
+  }
+
+  sample.time_ms = millis();
+
+  sample.ax = Wire.read() << 8 | Wire.read();
+  sample.ay = Wire.read() << 8 | Wire.read();
+  sample.az = Wire.read() << 8 | Wire.read();
+
+  int16_t temp = Wire.read() << 8 | Wire.read();
+
+  sample.gx = Wire.read() << 8 | Wire.read();
+  sample.gy = Wire.read() << 8 | Wire.read();
+  sample.gz = Wire.read() << 8 | Wire.read();
+
+  return true;
+}
+
+// ==========================================
+// MAIN LOOP
+// ==========================================
+
+void loop() {
+  unsigned long now = millis();
+
+  if (now - lastSample >= samplePeriod) {
+    float dt = (now - lastSample) / 1000.0;
+    lastSample = now;
+
+    IMUSample sample;
+
+    if (!readMPU6050(sample)) {
+      return;
+    }
+
+    // Apply calibration offsets
+    float corrected_ax = sample.ax - ax_offset;
+    float corrected_ay = sample.ay - ay_offset;
+    float corrected_az = sample.az - az_offset;
+
+    float corrected_gx = sample.gx - gx_offset;
+    float corrected_gy = sample.gy - gy_offset;
+    float corrected_gz = sample.gz - gz_offset;
+
+    // Store corrected values in moving average buffers
+    axBuffer[writeIndex] = corrected_ax;
+    ayBuffer[writeIndex] = corrected_ay;
+    azBuffer[writeIndex] = corrected_az;
+
+    gxBuffer[writeIndex] = corrected_gx;
+    gyBuffer[writeIndex] = corrected_gy;
+    gzBuffer[writeIndex] = corrected_gz;
+
+    writeIndex = (writeIndex + 1) % BUFFER_SIZE;
+
+    if (validSamples < BUFFER_SIZE) {
+      validSamples++;
+    }
+
+    // Compute moving averages
+    float sumAx = 0.0;
+    float sumAy = 0.0;
+    float sumAz = 0.0;
+
+    float sumGx = 0.0;
+    float sumGy = 0.0;
+    float sumGz = 0.0;
+
+    for (int i = 0; i < validSamples; i++) {
+      sumAx += axBuffer[i];
+      sumAy += ayBuffer[i];
+      sumAz += azBuffer[i];
+
+      sumGx += gxBuffer[i];
+      sumGy += gyBuffer[i];
+      sumGz += gzBuffer[i];
+    }
+
+    float filtered_ax = sumAx / validSamples;
+    float filtered_ay = sumAy / validSamples;
+    float filtered_az = sumAz / validSamples;
+
+    float filtered_gx = sumGx / validSamples;
+    float filtered_gy = sumGy / validSamples;
+    float filtered_gz = sumGz / validSamples;
+
+    // Accelerometer pitch reference
+    float pitch_rads = atan2(
+      -filtered_ax,
+      sqrt(filtered_ay * filtered_ay + filtered_az * filtered_az)
+    );
+
+    float pitch_deg = pitch_rads * 180.0 / PI;
+
+    // Gyro rate in deg/s
+    float gyroRateX = filtered_gx / 131.0;
+
+    // Pure gyro integration
+    gyroAngleX += gyroRateX * dt;
+
+    // Complementary filter
+    fusedAngleX = alpha * (fusedAngleX + gyroRateX * dt) + (1.0 - alpha) * pitch_deg;
+
+    // CSV output: EXACTLY 15 columns
+    Serial.print(sample.time_ms);
+    Serial.print(",");
+
+    Serial.print(sample.ax);
+    Serial.print(",");
+    Serial.print(sample.ay);
+    Serial.print(",");
+    Serial.print(sample.az);
+    Serial.print(",");
+
+    Serial.print(sample.gx);
+    Serial.print(",");
+    Serial.print(sample.gy);
+    Serial.print(",");
+    Serial.print(sample.gz);
+    Serial.print(",");
+
+    Serial.print(filtered_ax, 2);
+    Serial.print(",");
+    Serial.print(filtered_ay, 2);
+    Serial.print(",");
+    Serial.print(filtered_az, 2);
+    Serial.print(",");
+
+    Serial.print(filtered_gx, 2);
+    Serial.print(",");
+    Serial.print(gyroRateX, 4);
+    Serial.print(",");
+
+    Serial.print(pitch_deg, 2);
+    Serial.print(",");
+    Serial.print(gyroAngleX, 2);
+    Serial.print(",");
+    Serial.println(fusedAngleX, 2);
+  }
+}
