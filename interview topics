@@ -1,0 +1,225 @@
+# Engineering Challenges and System Debugging Notes
+
+## Overview
+
+This phase of the project became heavily focused on identifying, isolating, and correcting real-world inertial estimation problems rather than simply adding new features.
+
+Many of the most important lessons emerged from system instability, unexpected telemetry behavior, and long-duration drift testing.
+
+The project increasingly resembled real embedded systems debugging and estimation analysis rather than straightforward Arduino programming.
+
+---
+
+## Major Challenges Encountered
+
+### 1. False Orientation (“Ghost Tilt”)
+
+One of the largest issues encountered was a persistent false tilt estimate while the sensor remained physically flat.
+
+Symptoms:
+
+* fused orientation estimate slowly drifted upward
+* complementary filter appeared unstable
+* system falsely believed the IMU was rotating over time
+
+Initial debugging suggested gyro drift alone was responsible, but deeper analysis revealed the problem was layered across multiple mathematical subsystems.
+
+---
+
+### 2. Accelerometer Gravity Reference Corruption
+
+A critical mathematical mistake was identified in the accelerometer preprocessing pipeline.
+
+The system originally removed the full Z-axis gravity component:
+
+```cpp id="n4n6gf"
+corrected_az = sample.az - az_offset;
+```
+
+This unintentionally destroyed the gravity-vector geometry required for pitch estimation.
+
+Consequences:
+
+* flat orientation produced false 40° pitch estimates
+* complementary filter inherited incorrect reference behavior
+* fused orientation estimates became unstable
+
+This became one of the most important conceptual lessons of the project:
+accelerometer orientation estimation depends on preserving the gravity vector.
+
+---
+
+### 3. Gyroscope Drift Accumulation
+
+Even after initial gyro calibration, long-duration testing revealed that very small residual gyro biases accumulated into large orientation drift over time.
+
+Observed behavior:
+
+* gyro angle continuously climbed while stationary
+* tiny bias errors integrated forever
+* drift remained measurable over multi-minute tests
+
+This demonstrated a major inertial systems reality:
+small sensor errors become large state-estimation errors when integrated over time.
+
+---
+
+### 4. Fixed Timing Assumptions
+
+The original implementation assumed perfectly fixed loop timing:
+
+```cpp id="lj7k8n"
+const float dt = 0.10;
+```
+
+Real embedded execution timing varied slightly due to:
+
+* serial transmission delays
+* loop execution variability
+* I2C communication timing
+
+This created integration inaccuracies over long durations.
+
+The solution involved transitioning to real elapsed-time integration:
+
+```cpp id="j6jlwm"
+float dt = (now - lastSample) / 1000.0;
+```
+
+This improved long-term integration stability and reinforced the importance of timing integrity in real-time systems.
+
+---
+
+### 5. Complementary Filter Tuning
+
+Balancing the complementary filter required understanding the tradeoff between:
+
+* gyro responsiveness
+* accelerometer stability
+
+Challenges included:
+
+* excessive gyro trust caused drift accumulation
+* excessive accelerometer trust caused vibration sensitivity
+* incorrect tuning amplified instability rather than reducing it
+
+This phase demonstrated that sensor fusion tuning is both mathematical and experimental.
+
+---
+
+### 6. Real-World Sensor Noise
+
+The system exhibited multiple forms of real physical noise:
+
+* vibration
+* desk impacts
+* transient spikes
+* accelerometer shock corruption
+* electrical instability during early hardware testing
+
+Observations showed:
+
+* accelerometers react strongly to vibration and impacts
+* gyroscopes drift even while stationary
+* sensor fusion is necessary because neither sensor is reliable alone
+
+---
+
+### 7. Telemetry-Driven Debugging
+
+As complexity increased, debugging by intuition became ineffective.
+
+The project increasingly relied on:
+
+* CSV telemetry logging
+* long-duration datasets
+* drift-rate analysis
+* stationary validation experiments
+* comparative signal analysis
+
+This represented a major transition from:
+“watching Serial Monitor output”
+into:
+structured telemetry-driven engineering analysis.
+
+---
+
+## Important Engineering Lessons Learned
+
+### Sensor Fusion Exists Because Sensors Fail Differently
+
+Accelerometers:
+
+* stable long-term
+* noisy under motion
+
+Gyroscopes:
+
+* smooth short-term
+* drift long-term
+
+The complementary filter works because it balances opposite failure modes.
+
+---
+
+### Small Errors Matter in Real-Time Systems
+
+Tiny residual biases:
+
+* accumulate through integration
+* slowly corrupt orientation estimates
+* become visible only during long-duration testing
+
+This reinforced the importance of:
+
+* calibration
+* validation
+* timing accuracy
+* telemetry analysis
+
+---
+
+### Debugging Embedded Systems Is Layered
+
+Many failures initially appeared to originate from one subsystem but were actually caused by interactions between:
+
+* timing
+* filtering
+* geometry
+* calibration
+* integration
+* fusion tuning
+
+The debugging process became highly iterative and multi-disciplinary.
+
+---
+
+## Interview-Relevant Takeaways
+
+This phase demonstrated practical experience with:
+
+* real-time systems debugging
+* inertial estimation instability
+* telemetry-driven analysis
+* sensor fusion tuning
+* integration drift diagnosis
+* embedded timing correction
+* physical-system validation
+* layered debugging methodology
+
+Many of the most valuable lessons came directly from diagnosing failures rather than implementing new features.
+
+---
+
+## Current Status
+
+The system now contains:
+
+* stable accelerometer pitch estimation
+* real elapsed-time gyro integration
+* complementary-filter fusion
+* structured telemetry output
+* long-duration drift testing capability
+* significantly improved orientation stability
+
+While drift tuning continues, the overall estimation pipeline now behaves physically and mathematically correctly.
