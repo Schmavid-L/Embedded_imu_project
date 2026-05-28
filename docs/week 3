@@ -175,4 +175,516 @@ IMU → filtering/fusion → telemetry API → wireless transmission/logging
 * complementary filter tuning
 * orientation stability analysis
 * ESP32 telemetry migration planning
-* compact soldered embedded payload design
+* compact soldered embedded payload design 
+
+# Complementary Filter Debugging, Drift Analysis, and Real-Time IMU Validation
+
+## Overview
+
+Today focused on one of the most important phases of the project so far: diagnosing and correcting inertial estimation errors inside the complementary filter pipeline.
+
+Rather than simply implementing new functionality, the session evolved into a deep systems-debugging and validation exercise involving:
+
+* accelerometer reference correction
+* gyro drift analysis
+* real-time timing verification
+* sensor fusion stabilization
+* long-duration telemetry validation
+
+This phase represents a major transition from “building features” into true embedded systems engineering and estimation debugging.
+
+---
+
+## Major Problem Encountered — Ghost Tilt
+
+During long-duration flat-surface testing, the fused orientation estimate slowly drifted upward even while the IMU remained stationary.
+
+Initial observations showed:
+
+* gyro angle continuously climbing over time
+* fused angle slowly being pulled away from true flat orientation
+* accelerometer pitch producing incorrect reference behavior during early testing
+
+This created a “ghost tilt” phenomenon where the system falsely believed the sensor was slowly rotating despite remaining physically still.
+
+---
+
+## Root Cause Investigation
+
+### Accelerometer Reference Failure
+
+A critical issue was identified in the accelerometer preprocessing pipeline.
+
+Originally:
+
+```cpp
+corrected_az = sample.az - az_offset;
+```
+
+This unintentionally removed the gravity vector from the Z-axis before pitch computation.
+
+Because pitch estimation depends on the geometry of the gravity vector, subtracting the full gravity magnitude caused:
+
+* incorrect pitch reference geometry
+* false tilt estimates
+* severe fusion instability
+
+This explained the earlier 40° false pitch behavior while the sensor was physically flat.
+
+---
+
+## Accelerometer Reference Fix
+
+The correction involved preserving the Z-axis gravity reference during pitch estimation:
+
+```cpp
+corrected_az = sample.az;
+```
+
+while still allowing minor X/Y bias corrections.
+
+After the fix:
+
+* flat pitch estimates dropped from ~40° to ~0.6–0.7°
+* fused angle stabilized dramatically
+* orientation estimates became physically meaningful
+
+This represented a major conceptual breakthrough regarding accelerometer geometry and gravity-vector-based orientation estimation.
+
+---
+
+## Timing and Integration Improvements
+
+Another major issue identified was fixed-time integration.
+
+Originally:
+
+```cpp
+const float dt = 0.10;
+```
+
+This assumed perfect 100ms loop execution timing.
+
+The system was updated to compute real elapsed time dynamically using:
+
+```cpp
+float dt = (now - lastSample) / 1000.0;
+```
+
+This improved:
+
+* gyro integration accuracy
+* complementary filter consistency
+* long-duration drift behavior
+
+This reinforced an important embedded systems concept:
+real-time systems should not assume ideal timing behavior.
+
+---
+
+## Gyroscope Drift Analysis
+
+Long-duration stationary testing revealed:
+
+* gyro integration still accumulated slow drift
+* residual gyro bias remained even after initial calibration
+* filtered gyro values remained slightly positive during flat tests
+
+Through telemetry analysis:
+
+* residual drift rates were estimated
+* bias trends were measured directly from logged data
+* gyro offset tuning became data-driven rather than guess-based
+
+This highlighted a major inertial systems reality:
+
+Even very small gyro biases accumulate into large orientation errors over long periods of integration.
+
+---
+
+## Complementary Filter Validation
+
+Despite gyro drift, the complementary filter demonstrated strong stabilization behavior.
+
+Observed behavior:
+
+* pure gyro angle continuously climbed
+* accelerometer pitch remained relatively stable
+* fused angle remained bounded and physically reasonable
+
+This validated the core purpose of the complementary filter:
+
+* gyro provides smooth short-term motion tracking
+* accelerometer provides long-term orientation correction
+* fusion combines both strengths while minimizing individual weaknesses
+
+The system successfully resisted catastrophic orientation divergence despite imperfect gyro calibration.
+
+---
+
+## Long-Duration Telemetry Testing
+
+Multiple extended flat-orientation tests were performed using:
+
+* real-time CSV logging
+* structured telemetry output
+* timestamped fusion diagnostics
+
+This allowed:
+
+* drift characterization
+* fusion stability analysis
+* offset tuning validation
+* timing verification
+
+The project is now operating as a true telemetry-driven embedded estimation platform rather than a simple sensor demo.
+
+---
+
+## Key Engineering Concepts Explored
+
+### Inertial State Estimation
+
+Understanding how:
+
+* accelerometers estimate gravity orientation
+* gyroscopes estimate rotational motion
+* fusion combines both into a stable estimate
+
+---
+
+### Gravity Vector Geometry
+
+Understanding why:
+
+* pitch estimation depends on preserved gravity components
+* removing gravity from the wrong axis corrupts orientation math
+
+---
+
+### Drift Accumulation
+
+Understanding that:
+
+* tiny gyro bias errors accumulate forever during integration
+* state estimation systems require correction mechanisms
+
+---
+
+### Real-Time Timing Integrity
+
+Understanding that:
+
+* inaccurate timing assumptions directly affect integration quality
+* embedded estimation systems require accurate elapsed-time tracking
+
+---
+
+### Telemetry-Driven Debugging
+
+The debugging process increasingly relied on:
+
+* logged datasets
+* drift-rate analysis
+* telemetry interpretation
+* physical-system validation
+
+rather than intuition alone.
+
+---
+
+## Interview-Relevant Engineering Takeaways
+
+This phase demonstrated practical experience with:
+
+* embedded systems debugging
+* real-time signal processing
+* sensor fusion architecture
+* inertial navigation fundamentals
+* telemetry-based validation
+* long-duration drift analysis
+* real-world estimation instability diagnosis
+
+The project evolved beyond “reading sensors” into diagnosing and stabilizing a noisy real-time physical estimation system.
+
+---
+
+## Current Project Status
+
+The system now successfully performs:
+
+* MPU-6050 acquisition over I2C
+* moving-average filtering
+* accelerometer pitch estimation
+* gyro angle integration
+* complementary-filter fusion
+* structured telemetry streaming
+* long-duration validation logging
+
+The complementary filter now produces physically meaningful orientation estimates with dramatically reduced ghost-tilt behavior.
+
+---
+
+## Next Steps
+
+* finalize gyro bias tuning
+* further reduce long-duration drift
+* characterize complementary-filter stability under dynamic motion
+* perform disturbance and vibration validation
+* begin telemetry visualization and plotting
+* prepare for future ESP32 telemetry migration
+* continue development toward API-based inertial telemetry architecture
+# Real-Time Complementary Filter Stabilization and Inertial Math Corrections
+
+## Overview
+
+This phase focused on correcting and stabilizing the mathematical foundations of the embedded orientation estimation pipeline.
+
+The session evolved into a deep investigation of:
+
+* gyro integration drift
+* accelerometer gravity reference geometry
+* real-time timing accuracy
+* complementary filter stabilization
+* long-duration inertial telemetry validation
+
+The project transitioned further from “sensor reading” into practical inertial state estimation and estimation debugging.
+
+---
+
+## Major Mathematical Corrections
+
+### 1. Real-Time Integration Timing (`dt`)
+
+Originally, gyro integration assumed a perfectly fixed timing interval:
+
+```cpp
+const float dt = 0.10;
+```
+
+This created accumulated integration error because real embedded execution timing is never perfectly constant.
+
+The system was upgraded to compute elapsed time dynamically using:
+
+```cpp
+float dt = (now - lastSample) / 1000.0;
+```
+
+This corrected the gyro integration model by using actual elapsed time between samples rather than a fixed assumption.
+
+### Engineering Impact
+
+* reduced timing-induced integration error
+* improved long-duration gyro behavior
+* made integration mathematically consistent with real embedded timing
+
+---
+
+### 2. Accelerometer Gravity Reference Correction
+
+A major orientation estimation error was identified in the accelerometer preprocessing pipeline.
+
+Previously:
+
+* the full Z-axis gravity component was removed before pitch estimation
+* this destroyed the gravity-vector geometry required for tilt calculation
+
+This produced:
+
+* severe “ghost tilt”
+* false pitch estimates
+* unstable complementary filter behavior
+
+The correction preserved the gravity vector during pitch estimation:
+
+```cpp
+const float az_offset = 0.00;
+```
+
+This allowed:
+
+* the accelerometer to retain a valid gravity reference
+* pitch estimation to reflect real physical orientation
+
+### Engineering Impact
+
+* flat orientation estimates corrected from ~40° error down to ~0.6°
+* complementary filter stabilized significantly
+* orientation estimates became physically meaningful
+
+---
+
+### 3. Improved Pitch Estimation Geometry
+
+Pitch estimation was upgraded from a simplified 2-axis relationship into a more stable 3D gravity-vector formulation.
+
+Current implementation:
+
+```cpp
+atan2(
+  -filtered_ax,
+  sqrt(filtered_ay * filtered_ay + filtered_az * filtered_az)
+)
+```
+
+This computes pitch using:
+
+* X-axis gravity projection
+  relative to:
+* the combined Y/Z gravity magnitude
+
+### Engineering Impact
+
+* improved orientation robustness
+* reduced sensitivity to side-axis disturbances
+* more physically correct tilt estimation
+
+---
+
+### 4. Complementary Filter Stabilization
+
+The complementary filter architecture was refined into a stable fusion pipeline:
+
+```cpp
+fusedAngleX =
+alpha * (fusedAngleX + gyroRateX * dt)
++ (1.0 - alpha) * pitch_deg;
+```
+
+Current tuning:
+
+```cpp
+alpha = 0.95
+```
+
+Meaning:
+
+* 95% trust in short-term gyro dynamics
+* 5% trust in long-term accelerometer correction
+
+### Engineering Impact
+
+* gyro drift remained bounded
+* accelerometer noise was suppressed
+* fused orientation remained physically stable during stationary testing
+
+---
+
+## Long-Duration Drift Testing
+
+Extended stationary telemetry runs were performed over multi-minute intervals.
+
+Observations:
+
+* pure gyro integration continued accumulating slow drift
+* residual gyro bias remained measurable
+* complementary filter successfully prevented catastrophic angle divergence
+
+This validated the core purpose of sensor fusion:
+
+* gyroscope provides smooth short-term motion tracking
+* accelerometer provides long-term gravity correction
+
+---
+
+## Telemetry and Validation Pipeline
+
+The system now supports:
+
+* timestamped IMU telemetry
+* structured CSV logging
+* long-duration drift analysis
+* orientation validation experiments
+* real-time fusion debugging
+
+Current telemetry includes:
+
+* raw accelerometer data
+* raw gyro data
+* filtered accelerometer data
+* filtered gyro data
+* gyro rate conversion
+* accelerometer pitch estimate
+* integrated gyro angle
+* fused complementary-filter angle
+
+---
+
+## Key Engineering Concepts Explored
+
+### Inertial State Estimation
+
+Understanding how:
+
+* gyroscopes estimate rotational motion
+* accelerometers estimate gravity orientation
+* fusion combines both into a stable estimate
+
+---
+
+### Real-Time Integration
+
+Understanding:
+
+* why elapsed time accuracy directly affects angle integration
+* why embedded timing assumptions create long-term drift
+
+---
+
+### Gravity Vector Geometry
+
+Understanding:
+
+* why accelerometer orientation estimation depends on preserving gravity components
+* why removing gravity from the wrong axis corrupts pitch estimation
+
+---
+
+### Sensor Fusion Tradeoffs
+
+Understanding:
+
+* gyro = smooth but drifting
+* accelerometer = stable but noisy
+* complementary filtering balances both
+
+---
+
+## Current System Pipeline
+
+raw IMU acquisition
+→ offset correction
+→ moving-average filtering
+→ gravity-vector pitch estimation
+→ gyro rate conversion
+→ gyro integration
+→ complementary filter fusion
+→ structured telemetry logging
+
+---
+
+## Current Status
+
+The project now contains:
+
+* real MPU-6050 integration
+* real-time timing-aware gyro integration
+* gravity-correct pitch estimation
+* complementary-filter fusion
+* structured telemetry architecture
+* long-duration drift validation capability
+
+The fused orientation estimate now remains physically stable under stationary testing while resisting severe gyro divergence.
+
+---
+
+## Next Steps
+
+* finalize gyro bias tuning
+* continue drift minimization
+* characterize complementary-filter behavior under motion
+* perform vibration/disturbance validation
+* visualize telemetry datasets
+* prepare for wireless telemetry migration
+* continue development toward embedded telemetry/API architecture
+
