@@ -1,0 +1,138 @@
+import csv
+import serial
+import time
+import os
+from datetime import datetime
+
+# ==========================================
+# CONFIGURATION
+# ==========================================
+
+PORT = "COM3"
+BAUD_RATE = 115200
+
+OUTPUT_FILE = "imu_telemetry_log.csv"
+
+EXPECTED_COLUMNS = 15
+
+CSV_HEADER = [
+    "time_ms",
+    "raw_ax",
+    "raw_ay",
+    "raw_az",
+    "raw_gx",
+    "raw_gy",
+    "raw_gz",
+    "filtered_ax",
+    "filtered_ay",
+    "filtered_az",
+    "filtered_gx",
+    "gyroRateX",
+    "pitch_deg",
+    "gyro_angle_deg",
+    "fusedAngle_x",
+]
+
+# ==========================================
+# STARTUP CHECKS
+# ==========================================
+
+print(f"Initializing connection to Arduino on {PORT}...")
+print("Make sure Arduino Serial Monitor and Serial Plotter are CLOSED.")
+
+ser = None
+
+try:
+    # Open serial port
+    ser = serial.Serial(PORT, BAUD_RATE, timeout=1.0)
+
+    # Give Arduino time to reset
+    time.sleep(2)
+
+    # Clear old garbage data
+    ser.reset_input_buffer()
+
+    print(f"Connected to Arduino on {PORT}.")
+    print(f"Logging clean CSV data to: {os.path.abspath(OUTPUT_FILE)}")
+    print("Press Ctrl+C to stop logging and safely close the file.")
+
+    with open(OUTPUT_FILE, mode="w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+
+        # Write one clean CSV header
+        writer.writerow(CSV_HEADER)
+        file.flush()
+
+        while True:
+            raw_line = ser.readline()
+
+            clean_line = raw_line.decode("utf-8", errors="ignore").strip()
+
+            if not clean_line:
+                continue
+
+            # Ignore Arduino debug/status messages
+            if clean_line.startswith("#"):
+                print(clean_line)
+                continue
+
+            # Ignore Arduino header line
+            if clean_line.startswith("time_ms"):
+                print("Arduino CSV header detected and skipped.")
+                continue
+
+            # Ignore anything that is not CSV-looking data
+            if "," not in clean_line:
+                print(f"Skipped non-CSV line: {clean_line}")
+                continue
+
+            data_row = clean_line.split(",")
+
+            if len(data_row) != EXPECTED_COLUMNS:
+                print(f"Skipped malformed row with {len(data_row)} columns:")
+                print(data_row)
+                continue
+
+            try:
+                numeric_row = [float(value) for value in data_row]
+            except ValueError:
+                print(f"Skipped non-numeric row:")
+                print(data_row)
+                continue
+
+            writer.writerow(numeric_row)
+            file.flush()
+
+            print(f"Logged row: {numeric_row}")
+
+except serial.SerialException as e:
+    print()
+    print("Hardware Error: Could not access the Arduino serial port.")
+    print()
+    print("Fix checklist:")
+    print("1. Close Arduino Serial Monitor.")
+    print("2. Close Arduino Serial Plotter.")
+    print("3. Check that the Arduino is still on COM3.")
+    print("4. Unplug and replug the Arduino.")
+    print("5. If COM3 changed, update PORT in this Python file.")
+    print()
+    print(f"Details: {e}")
+
+except PermissionError:
+    print()
+    print("File Error: Python could not write to the CSV file.")
+    print()
+    print("Fix checklist:")
+    print("1. Close imu_telemetry_log.csv if it is open in Excel.")
+    print("2. Close any old Python script still running.")
+    print("3. Run this script again.")
+
+except KeyboardInterrupt:
+    print()
+    print("Logging stopped by user.")
+    print(f"CSV file saved here: {os.path.abspath(OUTPUT_FILE)}")
+
+finally:
+    if ser is not None and ser.is_open:
+        ser.close()
+        print("Serial port closed.")
