@@ -1,95 +1,150 @@
-# Embedded IMU Telemetry and Orientation Estimation System
+# Project Progress Update – IMU Sensor Fusion and Telemetry System
 
-## Overview
+## Current Status
 
-This project focuses on designing a real-time embedded inertial sensing and telemetry system using an MPU-6050 IMU and an Elegoo Uno R3.
+The project has successfully progressed from basic MPU-6050 communication into a functioning real-time orientation estimation system. Core sensor acquisition, filtering, calibration, and fusion logic have been implemented and validated through both physical testing and telemetry analysis.
 
-The system performs:
+## Completed Components
 
-* raw IMU acquisition over I2C
-* gyro bias calibration
-* moving average filtering
-* accelerometer-based pitch estimation
-* gyro angle integration
-* complementary-filter sensor fusion
-* structured telemetry streaming and CSV logging
+### Sensor Communication
 
-The long-term goal is to develop a compact embedded telemetry module capable of:
+* Established stable I2C communication with the MPU-6050.
+* Configured accelerometer and gyroscope operating ranges.
+* Implemented structured sensor acquisition architecture.
 
-* onboard filtering and state estimation
-* wireless telemetry transmission
-* API-compatible data logging
-* deployment onto a mobile platform such as an RC car
+### Sensor Calibration
 
----
+* Measured and applied static gyro bias corrections.
+* Measured and applied accelerometer bias corrections.
+* Investigated multiple stationary datasets to refine calibration values.
 
-## Current System Pipeline
+### Signal Processing
 
-Physical motion
-→ MPU-6050 sensor acquisition
-→ gyro offset correction
-→ moving average filtering
-→ accelerometer pitch estimation
-→ gyro angle integration
-→ complementary filter fusion
-→ serial telemetry output
-→ external CSV logging
+* Implemented moving-average filtering for:
 
----
+  * Accelerometer X/Y/Z
+  * Gyroscope X/Y/Z
+* Reduced high-frequency sensor noise while maintaining usable responsiveness.
 
-## Hardware
+### Orientation Estimation
 
-* Elegoo Uno R3
-* MPU-6050 IMU
-* Moving average filtering architecture
-* Structured telemetry output pipeline
-* CSV logging through serial gateway
+* Developed accelerometer-based pitch estimation using gravity-vector geometry.
+* Implemented gyro rate conversion and angular integration.
+* Corrected sign conventions and sensor axis orientation.
 
----
+### Complementary Filter Fusion
 
-## Current Progress
+* Integrated accelerometer and gyroscope measurements using a complementary filter.
+* Tuned filter weighting to balance:
 
-### Completed
+  * Gyro responsiveness
+  * Accelerometer stability
+* Verified that the fused angle remains stable despite significant gyro drift.
 
-* Non-blocking real-time sampling loop using `millis()`
-* Structured IMU sample architecture
-* Real MPU-6050 integration over I2C
-* Register-level sensor acquisition
-* Gyroscope bias calibration
-* Moving average filtering for gyro and accelerometer data
-* Accelerometer-based pitch estimation using `atan2()`
-* Gyroscope angle integration
-* Complementary filter implementation
-* Disturbance and vibration validation testing
-* Serial telemetry gateway with CSV logging
+## Validation Testing
 
-### Current Focus
+Extensive validation testing was performed, including:
 
-* Telemetry architecture refinement
-* Experimental validation and dataset collection
-* Orientation stability analysis
-* Preparation for wireless telemetry migration
+### Static Testing
 
----
+* Long-duration stationary testing.
+* Gyro drift characterization.
+* Baseline orientation verification.
 
-## Key Engineering Concepts Explored
+### Motion Testing
 
-* Sensor noise and drift
-* Real-time embedded timing
-* Ring buffer filtering architectures
-* State estimation
-* Complementary filtering
-* Sensor fusion tradeoffs
-* Disturbance rejection
-* Telemetry pipeline design
+* Forward tilt validation.
+* Backward tilt validation.
+* Return-to-baseline testing.
+* Rapid movement recovery testing.
 
----
+### Disturbance Testing
 
-## Planned Future Work
+* Physical tapping of the sensor.
+* Table vibration tests.
+* Abrupt motion disturbance tests.
 
-* ESP32 migration for wireless telemetry
-* API-based telemetry interface
-* Live telemetry visualization
-* RC car integration
-* Compact soldered embedded payload
-* Advanced orientation tracking and fusion refinement
+Results demonstrated that:
+
+* Pure gyro integration accumulates drift over time.
+* Accelerometer estimates remain stable but noisy.
+* The complementary filter successfully constrains drift while preserving responsiveness.
+
+## MATLAB Analysis Pipeline
+
+A telemetry analysis workflow was developed using MATLAB.
+
+Generated figures include:
+
+1. Accelerometer Pitch vs Gyro Angle vs Fused Angle
+2. Gyro Drift vs Complementary Filter Correction
+3. Raw vs Filtered Accelerometer Data
+4. Raw vs Filtered Gyroscope Data
+5. Corrected Gyroscope Rate Over Time
+
+These plots provide quantitative validation of system performance and document the effectiveness of the implemented filtering and fusion algorithms.
+
+## Major Engineering Challenges
+
+Throughout development, several challenges were encountered and resolved:
+
+* Gyroscope bias drift
+* False orientation estimates ("ghost tilt")
+* Gravity vector handling errors
+* Sign convention mismatches
+* Timing inaccuracies in gyro integration
+* Sensor fusion tuning tradeoffs
+* Real-world vibration and disturbance effects
+
+These issues required iterative debugging, telemetry analysis, and mathematical verification to resolve.
+
+## Current Project Architecture
+
+MPU-6050 Sensor
+
+→ Calibration Corrections
+
+→ Moving Average Filters
+
+→ Accelerometer Pitch Estimation
+
+→ Gyroscope Rate Integration
+
+→ Complementary Filter Fusion
+
+→ CSV Telemetry Logging
+
+→ MATLAB Analysis & Visualization
+
+## Project Completion Estimate
+
+Current Completion: ~75%
+
+Completed:
+
+* Sensor acquisition
+* Calibration
+* Filtering
+* Sensor fusion
+* Validation testing
+* Telemetry analysis
+
+Remaining:
+
+* Documentation refinement
+* Wireless telemetry migration (ESP32)
+* Embedded deployment optimization
+* Data logging API architecture
+* RC platform integration
+
+## Long-Term Objective
+
+The long-term goal is to build a compact embedded telemetry platform capable of:
+
+* Real-time orientation estimation
+* Wireless sensor streaming
+* Automated telemetry logging
+* Data analysis through a custom logging API
+* Deployment on mobile robotic platforms such as RC vehicles
+
+The project has now moved beyond proof-of-concept sensing and into system characterization, telemetry analysis, and deployment preparation.
