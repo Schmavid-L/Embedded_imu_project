@@ -148,3 +148,23 @@ The long-term goal is to build a compact embedded telemetry platform capable of:
 * Deployment on mobile robotic platforms such as RC vehicles
 
 The project has now moved beyond proof-of-concept sensing and into system characterization, telemetry analysis, and deployment preparation.
+
+
+![Image Description](/docs/accel_fused.png.png)
+**Figure 1 – Orientation Estimation During Disturbance Testing**
+
+This figure compares accelerometer-derived pitch, gyroscope-integrated angle, and the complementary-filter orientation estimate during a deliberate disturbance event. Around 12–15 seconds, a rapid motion was introduced to the sensor, causing the accelerometer pitch estimate to experience a significant transient deviation due to linear acceleration effects. The gyroscope estimate remained comparatively smooth but continued to accumulate bias drift throughout the test. The complementary filter successfully combined both measurements, substantially reducing the magnitude of disturbance-induced angle spikes while maintaining a stable orientation estimate. Following the disturbance, the fused angle recovered toward its baseline value, demonstrating the filter's ability to reject transient motion artifacts while preserving long-term orientation stability.
+
+
+![Image Description](figures/avgvf.png)
+**Figure 2 – Orientation Estimation During Disturbance Testing**
+
+This figure compares accelerometer-derived pitch, gyroscope-integrated angle, and the complementary-filter orientation estimate during a deliberate disturbance event. The accelerometer pitch estimate exhibits significant transient deviations due to rapid motion and linear acceleration, while the gyroscope angle remains comparatively smooth but continues to accumulate drift. The complementary filter successfully combines both measurements, reducing disturbance-induced angle spikes while maintaining recovery to the baseline orientation estimate. These results demonstrate the filter's ability to reject short-duration disturbances without sacrificing long-term stability.
+
+
+![Image_Description](figures/gyrodrift_compfiltercorrection.png)
+**Figure 3 – Gyroscope Drift Correction Using a Complementary Filter**
+
+This stationary validation test highlights the effects of gyroscope bias drift and the corrective action of the complementary filter. While the pure gyroscope estimate continuously diverges from the initial orientation due to accumulated integration error, the fused angle remains bounded by periodically correcting itself using the accelerometer-based reference. The results confirm that the complementary filter successfully limits long-term drift while preserving the smooth response characteristics of gyroscope measurements, making it suitable for real-time orientation estimation.
+
+
