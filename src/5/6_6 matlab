@@ -1,0 +1,76 @@
+% Load CSV
+data = readtable("imu_telemetry_log.csv");
+
+% Convert time to seconds
+t = (data.time_ms - data.time_ms(1)) / 1000;
+
+%% Plot 1: Main orientation model
+figure;
+plot(t, data.pitch_deg, 'LineWidth', 1.2); hold on;
+plot(t, data.gyro_angle_deg, 'LineWidth', 1.2);
+plot(t, data.fusedAngle_x, 'LineWidth', 1.8);
+grid on;
+
+xlabel("Time (s)");
+ylabel("Angle (deg)");
+title("IMU Orientation Estimate: Accelerometer vs Gyro vs Fused Angle");
+legend("Accelerometer Pitch", "Gyro Integrated Angle", "Complementary Fused Angle");
+
+%% Plot 2: Gyro drift model
+figure;
+plot(t, data.gyro_angle_deg, 'LineWidth', 1.5); hold on;
+plot(t, data.fusedAngle_x, 'LineWidth', 1.8);
+grid on;
+
+xlabel("Time (s)");
+ylabel("Angle (deg)");
+title("Gyro Drift vs Complementary Filter Correction");
+legend("Pure Gyro Angle", "Fused Angle");
+
+%% Plot 3: Accelerometer filtering model
+figure;
+plot(t, data.raw_ax, 'LineWidth', 1.0); hold on;
+plot(t, data.filtered_ax, 'LineWidth', 1.8);
+grid on;
+
+xlabel("Time (s)");
+ylabel("Acceleration Raw LSB");
+title("Accelerometer X-Axis: Raw vs Filtered");
+legend("Raw AX", "Filtered AX");
+
+%% Plot 4: Gyroscope filtering model
+figure;
+plot(t, data.raw_gx, 'LineWidth', 1.0); hold on;
+plot(t, data.filtered_gx, 'LineWidth', 1.8);
+grid on;
+
+xlabel("Time (s)");
+ylabel("Gyro Raw LSB");
+title("Gyroscope X-Axis: Raw vs Filtered");
+legend("Raw GX", "Filtered GX");
+
+%% Plot 5: Gyro rate behavior
+figure;
+plot(t, data.gyroRateX, 'LineWidth', 1.5);
+grid on;
+
+xlabel("Time (s)");
+ylabel("Angular Velocity (deg/s)");
+title("Corrected Gyro X Rate Over Time");
+legend("Gyro Rate X");
+
+
+%% Plot 6: fused vs pitch deg
+figure;
+plot(t, data.pitch_deg, 'LineWidth', 1.5);
+hold on;
+
+plot(t, data.fusedAngle_x, 'LineWidth', 2.0);
+
+grid on;
+
+xlabel('Time (s)');
+ylabel('Angle (deg)');
+title('Accelerometer Pitch vs Fused Angle');
+
+legend('Pitch Angle','Fused Angle','Location','best');
