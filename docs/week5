@@ -1,1 +1,69 @@
+## ESP32 Migration Progress Update
+
+### Overview
+
+Development efforts shifted from algorithm validation to embedded hardware migration. The objective of this phase is to transfer the validated MPU-6050 sensor-fusion system from the Arduino Nano platform to an ESP32 architecture in preparation for future wireless telemetry, onboard data processing, and API-driven logging capabilities.
+
+### Migration Accomplishments
+
+#### ESP32 Development Environment Setup
+
+* Installed and configured the Espressif ESP32 board package within Arduino IDE.
+* Diagnosed and resolved USB communication issues related to the CP2102 USB-to-UART bridge interface.
+* Installed the required CP210x driver and verified successful COM port recognition by the host system.
+* Configured the ESP32 Dev Module target and successfully uploaded test firmware.
+
+#### Hardware Bring-Up
+
+* Powered and initialized the ESP32 development board.
+* Verified serial communication between the ESP32 and host PC.
+* Confirmed successful firmware upload and execution through serial output testing.
+
+#### MPU-6050 Integration
+
+* Connected the MPU-6050 to the ESP32 using the I2C interface.
+* Identified and verified correct ESP32 SDA and SCL pin assignments.
+* Successfully detected the MPU-6050 at I2C address 0x68 using a dedicated bus scanner.
+* Confirmed functional communication between the ESP32 and sensor hardware.
+
+### Challenges Encountered
+
+Several hardware and development environment issues were encountered and resolved:
+
+* Incorrect board package selection within Arduino IDE.
+* ESP32 board identification conflicts between Arduino and Espressif board definitions.
+* Missing CP2102 driver preventing serial communication.
+* COM port recognition failures during initial setup.
+* Verification of ESP32 GPIO naming conventions and I2C routing.
+* Breadboard layout constraints caused by ESP32 form factor.
+
+These issues required systematic troubleshooting involving driver installation, board configuration validation, serial diagnostics, and hardware verification.
+
+### Current Status
+
+The ESP32 platform is now operational and capable of communicating with the MPU-6050 sensor.
+
+Migration progress has successfully completed:
+
+* ESP32 development environment setup
+* Driver installation and debugging
+* Serial communication verification
+* I2C bus verification
+* MPU-6050 hardware communication validation
+
+### Next Phase
+
+Upcoming work will focus on software migration:
+
+1. Port raw sensor acquisition routines.
+2. Verify accelerometer and gyroscope outputs against Arduino baseline telemetry.
+3. Port moving-average filtering architecture.
+4. Port accelerometer pitch estimation.
+5. Port gyroscope integration routines.
+6. Port complementary-filter sensor fusion.
+7. Validate ESP32 outputs against previously characterized Arduino datasets.
+
+### Significance
+
+This milestone marks the transition from a validated proof-of-concept sensor-fusion prototype to a deployable embedded platform capable of supporting future wireless telemetry, remote data logging, and compact hardware integration.
 
