@@ -66,4 +66,9 @@ Upcoming work will focus on software migration:
 ### Significance
 
 This milestone marks the transition from a validated proof-of-concept sensor-fusion prototype to a deployable embedded platform capable of supporting future wireless telemetry, remote data logging, and compact hardware integration.
+6/8/26 notes
+##
 
+
+
+![Pitch Gyro Fused Plot](figures/pitch_gyro_fused.png)
