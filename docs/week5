@@ -72,3 +72,19 @@ This milestone marks the transition from a validated proof-of-concept sensor-fus
 
 
 ![Pitch Gyro Fused Plot](figures/pitch_gyro_fused.png)
+
+
+### Weekly Progress Update
+
+* Completed ESP32 migration from the Arduino Nano platform.
+* Installed and configured the ESP32 development environment and resolved CP2102 driver communication issues.
+* Verified successful MPU6050 communication over I2C using GPIO21 and GPIO22.
+* Recalibrated sensor offsets using MATLAB analysis of ESP32 telemetry datasets.
+* Validated complementary filter performance on the ESP32 platform and confirmed stable orientation estimates despite expected gyroscope drift.
+* Generated and documented MATLAB validation figures comparing raw, filtered, and fused sensor outputs.
+* Designed and assembled the first battery-powered hardware prototype using an ESP32, MPU6050, TP4056 charging module, LiPo battery, and power switch.
+* Verified battery-powered operation and successful power control through the integrated switch.
+* Established the foundation for future Bluetooth/WiFi telemetry and standalone embedded deployment.
+
+**Current Status:** ESP32-based sensor fusion platform is operational, battery powered, and ready for final hardware cleanup, telemetry development, and enclosure/perfboard refinement.
+
