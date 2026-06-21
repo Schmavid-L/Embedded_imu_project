@@ -88,3 +88,15 @@ This milestone marks the transition from a validated proof-of-concept sensor-fus
 
 **Current Status:** ESP32-based sensor fusion platform is operational, battery powered, and ready for final hardware cleanup, telemetry development, and enclosure/perfboard refinement.
 
+### Hardware Integration Update
+
+* Completed migration from Arduino Nano to ESP32-WROOM-32 platform.
+* Permanently mounted ESP32 and MPU6050 onto perfboard prototype.
+* Integrated battery-powered architecture using a 3.7V LiPo battery, TP4056 charging module, and external power switch.
+* Verified ESP32 operation from both USB and battery power sources.
+* Validated VIN, 3.3V, and battery voltage rails using multimeter-based diagnostics.
+* Troubleshot multiple power-distribution and solder-joint issues during assembly, resulting in a significantly cleaner and more reliable hardware layout.
+* Confirmed MPU6050 communication over I2C using GPIO21 (SDA) and GPIO22 (SCL).
+* Revalidated sensor fusion functionality following hardware migration and power-system integration.
+
+**Current Status:** Self-contained ESP32 sensor-fusion prototype is operational and ready for wireless telemetry development.
